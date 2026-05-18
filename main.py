@@ -48,50 +48,59 @@ SEVERITY_LABELS = {
 
 def print_banner():
     """Print the CodeLens ASCII banner (Windows-safe ASCII art)."""
-    banner = (
-        f"\n{Fore.CYAN + Style.BRIGHT}"
-        "+----------------------------------------------------------+\n"
-        "|                                                          |\n"
-        "|      CCCC   OOO   DDDD   EEEEE  L      EEEEE  N   N    |\n"
-        "|     C      O   O  D   D  E      L      E      NN  N    |\n"
-        "|     C      O   O  D   D  EEE    L      EEE    N N N    |\n"
-        "|     C      O   O  D   D  E      L      E      N  NN    |\n"
-        "|      CCCC   OOO   DDDD   EEEEE  LLLLL  EEEEE  N   N    |\n"
-        f"|          {Fore.WHITE}L   E   N   S{Fore.CYAN + Style.BRIGHT}                               |\n"
-        "|                                                          |\n"
-        f"|   {Fore.WHITE}Intelligent Code Review Assistant  v{VERSION}{Fore.CYAN + Style.BRIGHT}            |\n"
-        "|                                                          |\n"
-        f"+----------------------------------------------------------+{Style.RESET_ALL}\n"
-    )
-    print(banner)
+    inner_width = 58
+    border = "+" + "-" * inner_width + "+"
+    
+    print(f"\n{Fore.CYAN + Style.BRIGHT}{border}")
+    print(f"{Fore.CYAN + Style.BRIGHT}|" + " ".center(inner_width) + "|")
+    
+    banner_art = [
+        "   ____          _      _                    ",
+        "  / ___|___   __| | ___| |    ___ _ __  ___  ",
+        " | |   / _ \\ / _` |/ _ \\ |   / _ \\ '_ \\/ __| ",
+        " | |__| (_) | (_| |  __/ |__|  __/ | | \\__ \\ ",
+        "  \\____\\___/ \\__,_|\\___|_____\\___|_| |_|___/ "
+    ]
+    
+    for art in banner_art:
+        padded_art = art.ljust(inner_width)
+        print(f"{Fore.CYAN + Style.BRIGHT}|{padded_art}|")
+        
+    print(f"{Fore.CYAN + Style.BRIGHT}|" + " ".center(inner_width) + "|")
+    
+    subtitle = f"Intelligent Code Review Assistant  v{VERSION}"
+    centered_subtitle = subtitle.center(inner_width)
+    colored_subtitle = centered_subtitle.replace(subtitle, f"{Fore.WHITE}{subtitle}{Fore.CYAN + Style.BRIGHT}")
+    
+    print(f"{Fore.CYAN + Style.BRIGHT}|{colored_subtitle}|")
+    print(f"{Fore.CYAN + Style.BRIGHT}{border}{Style.RESET_ALL}\n")
 
 
 def print_section_header(title):
     """Print a styled section header."""
-    width = 58
-    print(f"\n{Fore.CYAN}{'-' * width}")
-    print(f"{Fore.CYAN + Style.BRIGHT}  > {title}")
+    width = 60
+    print(f"\n{Fore.CYAN + Style.BRIGHT}>> {title.upper()}")
     print(f"{Fore.CYAN}{'-' * width}{Style.RESET_ALL}")
 
 
 def print_success(message):
     """Print a green success message."""
-    print(f"{Fore.GREEN + Style.BRIGHT}  [OK] {message}{Style.RESET_ALL}")
+    print(f"{Fore.GREEN + Style.BRIGHT}[SUCCESS]{Style.RESET_ALL} {message}")
 
 
 def print_error(message):
     """Print a red error message."""
-    print(f"{Fore.RED + Style.BRIGHT}  [ERROR] {message}{Style.RESET_ALL}")
+    print(f"{Fore.RED + Style.BRIGHT}[ERROR]{Style.RESET_ALL}   {message}")
 
 
 def print_info(message):
     """Print a cyan info message."""
-    print(f"{Fore.CYAN}  [INFO] {message}{Style.RESET_ALL}")
+    print(f"{Fore.CYAN + Style.BRIGHT}[INFO]{Style.RESET_ALL}    {message}")
 
 
 def print_warning(message):
     """Print a yellow warning message."""
-    print(f"{Fore.YELLOW}  [WARN] {message}{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW + Style.BRIGHT}[WARN]{Style.RESET_ALL}    {message}")
 
 
 def format_violation(severity, pattern, line_number, context=""):
