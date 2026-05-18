@@ -117,7 +117,9 @@ def format_violation(severity, pattern, line_number, context=""):
     label = SEVERITY_LABELS.get(severity, severity.upper())
     output = f"  {color}[{label}]{Style.RESET_ALL} {Fore.WHITE}\"{pattern}\"{Style.RESET_ALL} found at line {Fore.CYAN}{line_number}{Style.RESET_ALL}"
     if context:
-        output += f"\n         {Fore.LIGHTBLACK_EX}{context.strip()}{Style.RESET_ALL}"
+        # Prevent UnicodeEncodeError in Windows CMD for symbols like ✓ or ✗
+        safe_context = context.strip().encode('ascii', 'replace').decode('ascii')
+        output += f"\n         {Fore.LIGHTBLACK_EX}{safe_context}{Style.RESET_ALL}"
     return output
 
 
@@ -245,22 +247,22 @@ def load_last_scan():
 def cmd_scan(args):
     """
     Handle the `scan <directory>` command.
-    Scans all matching source files using both Horspool and Naive matchers,
+    Scans all matching source files (or a single file) using both Horspool and Naive matchers,
     prints colorized violations, and caches results for report/stats.
     """
     from scanner import horspool, naive
     from filesystem.sequential_access import read_file_sequential
 
-    directory = os.path.abspath(args.directory)
+    target_path = os.path.abspath(args.directory)
     extensions = parse_extensions(args.ext)
 
     print_section_header("Scan Configuration")
-    print_info(f"Target directory : {directory}")
+    print_info(f"Target path      : {target_path}")
     print_info(f"Extensions       : {', '.join(extensions)}")
 
-    # Validate directory
-    if not os.path.isdir(directory):
-        print_error(f"Directory does not exist: {directory}")
+    # Validate path
+    if not os.path.exists(target_path):
+        print_error(f"Path does not exist: {target_path}")
         sys.exit(1)
 
     # Load config
@@ -274,10 +276,13 @@ def cmd_scan(args):
 
     # Collect source files
     source_files = []
-    for root, dirs, files in os.walk(directory):
-        for fname in files:
-            if any(fname.lower().endswith(ext) for ext in extensions):
-                source_files.append(os.path.join(root, fname))
+    if os.path.isfile(target_path):
+        source_files.append(target_path)
+    else:
+        for root, dirs, files in os.walk(target_path):
+            for fname in files:
+                if any(fname.lower().endswith(ext) for ext in extensions):
+                    source_files.append(os.path.join(root, fname))
 
     print_success(f"Found {len(source_files)} source file(s)")
 
@@ -295,7 +300,10 @@ def cmd_scan(args):
 
     for fpath in source_files:
         file_issues = []
-        rel_path = os.path.relpath(fpath, directory)
+        if os.path.isfile(target_path):
+            rel_path = os.path.basename(fpath)
+        else:
+            rel_path = os.path.relpath(fpath, target_path)
 
         # Read file using sequential access (Dev 2)
         try:
@@ -362,7 +370,7 @@ def cmd_scan(args):
 
     # Cache results
     metadata = {
-        "directory": directory,
+        "directory": target_path,
         "extensions": ', '.join(extensions),
         "files_scanned": len(source_files),
         "total_violations": total_violations,
