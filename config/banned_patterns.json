@@ -1,0 +1,5 @@
+{
+  "critical": ["password=", "eval(", "exec("],
+  "warning": ["TODO", "FIXME"],
+  "style": ["goto", "global"]
+}
