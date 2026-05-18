@@ -14,6 +14,7 @@ import sys
 import os
 import json
 import time
+from datetime import datetime
 
 import colorama
 from colorama import Fore, Back, Style
@@ -238,15 +239,18 @@ def load_last_scan():
 
 
 # ═══════════════════════════════════════════════════════════════════
-#  CLI command handlers  (Phase 1: skeleton stubs)
+#  CLI command handlers  (Phase 3: fully wired)
 # ═══════════════════════════════════════════════════════════════════
 
 def cmd_scan(args):
     """
     Handle the `scan <directory>` command.
-    Phase 1: Validates inputs, loads config, prints confirmation.
-    Phase 2/3: Will invoke directory walker + pattern matchers.
+    Scans all matching source files using both Horspool and Naive matchers,
+    prints colorized violations, and caches results for report/stats.
     """
+    from scanner import horspool, naive
+    from filesystem.sequential_access import read_file_sequential
+
     directory = os.path.abspath(args.directory)
     extensions = parse_extensions(args.ext)
 
@@ -268,47 +272,148 @@ def cmd_scan(args):
         count = len(config[severity])
         print(f"    {color}{SEVERITY_LABELS[severity]}: {count} patterns{Style.RESET_ALL}")
 
-    print_section_header("Scanning")
-    print_info("Scan engine not yet wired (waiting for Dev 1 & Dev 2 modules).")
-    print_info("Phase 2 will integrate directory walker + pattern matchers here.")
-
-    # Placeholder: collect matching source files
+    # Collect source files
     source_files = []
     for root, dirs, files in os.walk(directory):
         for fname in files:
             if any(fname.lower().endswith(ext) for ext in extensions):
                 source_files.append(os.path.join(root, fname))
 
-    print_success(f"Found {len(source_files)} source file(s) matching {', '.join(extensions)}")
-    for fpath in source_files[:10]:
-        print(f"    {Fore.LIGHTBLACK_EX}{fpath}{Style.RESET_ALL}")
-    if len(source_files) > 10:
-        print(f"    {Fore.LIGHTBLACK_EX}... and {len(source_files) - 10} more{Style.RESET_ALL}")
+    print_success(f"Found {len(source_files)} source file(s)")
+
+    if not source_files:
+        print_warning("No files to scan.")
+        return
+
+    # ── Scan using both algorithms ────────────────────────────────
+    print_section_header("Scanning with Horspool Algorithm")
+
+    results = {}       # {filepath: [issues]}
+    total_violations = 0
+    horspool_total_time = 0.0
+    naive_total_time = 0.0
+
+    for fpath in source_files:
+        file_issues = []
+        rel_path = os.path.relpath(fpath, directory)
+
+        # Read file using sequential access (Dev 2)
+        try:
+            lines = list(read_file_sequential(fpath))
+        except Exception as e:
+            print_error(f"Could not read {rel_path}: {e}")
+            continue
+
+        for line_number, line_content in lines:
+            for pattern, severity in all_patterns:
+                # Horspool search (Dev 1)
+                h_start = time.time()
+                h_matches = horspool.search(line_content, pattern)
+                horspool_total_time += time.time() - h_start
+
+                # Naive search for benchmarking (Dev 1)
+                n_start = time.time()
+                naive.search(line_content, pattern)
+                naive_total_time += time.time() - n_start
+
+                if h_matches:
+                    issue = {
+                        "severity": severity,
+                        "pattern": pattern,
+                        "line": line_number,
+                        "context": line_content.rstrip("\n\r"),
+                    }
+                    file_issues.append(issue)
+                    total_violations += 1
+
+        if file_issues:
+            results[rel_path] = file_issues
+            # Print violations for this file
+            print(f"\n  {Fore.WHITE + Style.BRIGHT}File: {rel_path}{Style.RESET_ALL}")
+            for issue in file_issues:
+                print(format_violation(
+                    issue['severity'],
+                    issue['pattern'],
+                    issue['line'],
+                    issue['context'],
+                ))
+
+    # ── Summary ───────────────────────────────────────────────────
+    print_section_header("Scan Summary")
+
+    severity_counts = {"critical": 0, "warning": 0, "style": 0}
+    for issues in results.values():
+        for issue in issues:
+            severity_counts[issue['severity']] += 1
+
+    print_info(f"Files scanned   : {len(source_files)}")
+    print_info(f"Files with issues: {len(results)}")
+    print(f"    {Fore.RED + Style.BRIGHT}Critical : {severity_counts['critical']}{Style.RESET_ALL}")
+    print(f"    {Fore.YELLOW}Warnings : {severity_counts['warning']}{Style.RESET_ALL}")
+    print(f"    {Fore.BLUE}Style    : {severity_counts['style']}{Style.RESET_ALL}")
+    print_info(f"Total violations: {total_violations}")
+
+    print_section_header("Algorithm Benchmark")
+    print_info(f"Horspool total : {horspool_total_time:.5f}s")
+    print_info(f"Naive total    : {naive_total_time:.5f}s")
+    if naive_total_time > 0:
+        speedup = naive_total_time / max(horspool_total_time, 0.00001)
+        print_success(f"Horspool speedup: {speedup:.2f}x")
+
+    # Cache results
+    metadata = {
+        "directory": directory,
+        "extensions": ', '.join(extensions),
+        "files_scanned": len(source_files),
+        "total_violations": total_violations,
+        "severity_counts": severity_counts,
+        "scan_time": horspool_total_time,
+        "horspool_time": horspool_total_time,
+        "naive_time": naive_total_time,
+    }
+    save_scan_results(results, metadata)
+    print_success(f"Results cached for report/stats commands")
 
 
 def cmd_report(args):
     """
     Handle the `report` command.
-    Phase 1: Skeleton that checks for cached scan data.
-    Phase 2: Will generate TXT/JSON/CSV reports.
+    Generates a TXT, JSON, or CSV report from cached scan data.
     """
+    from reports.report_generator import (
+        generate_txt_report,
+        generate_json_report,
+        generate_csv_report,
+    )
+
     print_section_header("Report Generation")
-    print_info(f"Format requested: {args.format}")
+    print_info(f"Format: {args.format.upper()}")
 
     results, metadata = load_last_scan()
     if results is None:
         print_warning("No scan results found. Run `scan <directory>` first.")
         return
 
-    print_info("Report generator not yet wired (Phase 2 task).")
-    print_info(f"Cached scan data available with {len(results)} file(s).")
+    os.makedirs(REPORT_OUTPUT_DIR, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"codelens_report_{timestamp}.{args.format}"
+    filepath = os.path.join(REPORT_OUTPUT_DIR, filename)
+
+    if args.format == "txt":
+        generate_txt_report(results, metadata, filepath)
+    elif args.format == "json":
+        generate_json_report(results, metadata, filepath)
+    elif args.format == "csv":
+        generate_csv_report(results, metadata, filepath)
+
+    print_success(f"Report saved to: {filepath}")
+    print_info(f"Violations captured: {metadata.get('total_violations', 0)}")
 
 
 def cmd_stats(args):
     """
     Handle the `stats` command.
-    Phase 1: Skeleton that checks for cached data.
-    Phase 3: Will display full analytics dashboard.
+    Displays a full analytics dashboard from cached scan data.
     """
     print_section_header("Analytics Dashboard")
 
@@ -317,39 +422,142 @@ def cmd_stats(args):
         print_warning("No scan results found. Run `scan <directory>` first.")
         return
 
-    print_info("Analytics dashboard not yet wired (Phase 3 task).")
-    print_info(f"Cached scan data available with {len(results)} file(s).")
+    sev = metadata.get("severity_counts", {})
+    total = metadata.get("total_violations", 0)
+
+    # Find worst offending file
+    worst_file = ""
+    worst_count = 0
+    for fname, issues in results.items():
+        if len(issues) > worst_count:
+            worst_count = len(issues)
+            worst_file = fname
+
+    # Find most common pattern
+    pattern_freq = {}
+    for issues in results.values():
+        for issue in issues:
+            p = issue['pattern']
+            pattern_freq[p] = pattern_freq.get(p, 0) + 1
+    most_common = max(pattern_freq, key=pattern_freq.get) if pattern_freq else "N/A"
+    most_common_count = pattern_freq.get(most_common, 0)
+
+    # Dashboard output
+    width = 60
+    print(f"\n{Fore.CYAN + Style.BRIGHT}{'=' * width}{Style.RESET_ALL}")
+    print(f"{Fore.WHITE + Style.BRIGHT}  CODELENS ANALYTICS{Style.RESET_ALL}")
+    print(f"{Fore.CYAN + Style.BRIGHT}{'=' * width}{Style.RESET_ALL}\n")
+
+    rows = [
+        ("Files scanned",       str(metadata.get("files_scanned", 0))),
+        ("Files with issues",   str(len(results))),
+        ("Total violations",    str(total)),
+        ("Critical issues",     f"{Fore.RED + Style.BRIGHT}{sev.get('critical', 0)}{Style.RESET_ALL}"),
+        ("Warnings",            f"{Fore.YELLOW}{sev.get('warning', 0)}{Style.RESET_ALL}"),
+        ("Style issues",        f"{Fore.BLUE}{sev.get('style', 0)}{Style.RESET_ALL}"),
+        ("", ""),
+        ("Most common pattern", f"\"{most_common}\" ({most_common_count} hits)"),
+        ("Worst offending file", f"{worst_file} ({worst_count} issues)"),
+        ("", ""),
+        ("Horspool time",       f"{metadata.get('horspool_time', 0):.5f}s"),
+        ("Naive time",          f"{metadata.get('naive_time', 0):.5f}s"),
+        ("Scan duration",       f"{metadata.get('scan_time', 0):.5f}s"),
+    ]
+
+    for label, value in rows:
+        if label == "":
+            print(f"{Fore.CYAN}  {'-' * (width - 4)}{Style.RESET_ALL}")
+        else:
+            print(f"  {Fore.WHITE}{label:<24}{Style.RESET_ALL}{value}")
+
+    print(f"\n{Fore.CYAN + Style.BRIGHT}{'=' * width}{Style.RESET_ALL}")
+
+    # Top patterns table
+    if pattern_freq:
+        print_section_header("Top Patterns")
+        sorted_patterns = sorted(pattern_freq.items(), key=lambda x: x[1], reverse=True)[:10]
+        print(f"  {'Pattern':<30} {'Count':>6}")
+        print(f"  {'-' * 30} {'-' * 6}")
+        for pattern, count in sorted_patterns:
+            print(f"  {pattern:<30} {count:>6}")
 
 
 def cmd_jump(args):
     """
     Handle the `jump <file> <line>` command.
-    Phase 1: Validates inputs.
-    Phase 3: Will use direct_access module from Dev 2.
+    Demonstrates both sequential and direct (random) file access,
+    comparing their performance side by side.
     """
+    from filesystem.direct_access import index_file_lines, read_line_direct
+    from filesystem.sequential_access import read_file_sequential
+
     filepath = os.path.abspath(args.file)
+    target_line = args.line
 
     print_section_header("Direct Access Jump")
     print_info(f"File : {filepath}")
-    print_info(f"Line : {args.line}")
+    print_info(f"Line : {target_line}")
 
     if not os.path.isfile(filepath):
         print_error(f"File not found: {filepath}")
         return
 
-    if args.line < 1:
+    if target_line < 1:
         print_error("Line number must be >= 1.")
         return
 
-    print_info("Direct access module not yet wired (waiting for Dev 2).")
+    # ── Method 1: Sequential access ──────────────────────────────
+    print_section_header("Sequential Access (line-by-line)")
+    seq_start = time.time()
+    seq_result = None
+    for line_num, line_content in read_file_sequential(filepath):
+        if line_num == target_line:
+            seq_result = line_content
+            break
+    seq_time = time.time() - seq_start
+
+    if seq_result is not None:
+        print_success(f"Found line {target_line} in {seq_time:.6f}s")
+        print(f"    {Fore.WHITE}{seq_result.rstrip()}{Style.RESET_ALL}")
+    else:
+        print_warning(f"Line {target_line} not found (file has fewer lines).")
+
+    # ── Method 2: Direct access (byte offset jump) ───────────────
+    print_section_header("Direct Access (byte offset jump)")
+    idx_start = time.time()
+    offsets = index_file_lines(filepath)
+    idx_time = time.time() - idx_start
+
+    jump_start = time.time()
+    direct_result = read_line_direct(filepath, target_line, offsets)
+    jump_time = time.time() - jump_start
+
+    if direct_result is not None:
+        print_success(f"Indexed {len(offsets)} lines in {idx_time:.6f}s")
+        print_success(f"Jumped to line {target_line} in {jump_time:.6f}s")
+        print(f"    {Fore.WHITE}{direct_result.rstrip()}{Style.RESET_ALL}")
+    else:
+        print_warning(f"Line {target_line} not found (file has {len(offsets)} lines).")
+
+    # ── Performance comparison ────────────────────────────────────
+    print_section_header("Access Method Comparison")
+    print_info(f"Sequential : {seq_time:.6f}s")
+    print_info(f"Direct     : {idx_time + jump_time:.6f}s (index: {idx_time:.6f}s + jump: {jump_time:.6f}s)")
+
+    if seq_result and direct_result:
+        if seq_result.rstrip() == direct_result.rstrip():
+            print_success("Both methods returned the same result.")
+        else:
+            print_warning("Results differ between methods!")
 
 
 def cmd_compare(args):
     """
     Handle the `compare <file1> <file2>` command.
-    Phase 1: Validates inputs.
-    Phase 3: Will use similarity module from Dev 1/2.
+    Uses similarity module to compute plagiarism/copy-paste score.
     """
+    from scanner.similarity import calculate_similarity, longest_common_substring
+
     file1 = os.path.abspath(args.file1)
     file2 = os.path.abspath(args.file2)
 
@@ -362,7 +570,53 @@ def cmd_compare(args):
             print_error(f"File not found: {fpath}")
             return
 
-    print_info("Similarity engine not yet wired (waiting for Dev 1 & Dev 2 modules).")
+    # Read file contents
+    with open(file1, "r", encoding="utf-8", errors="ignore") as f:
+        text1 = f.read()
+    with open(file2, "r", encoding="utf-8", errors="ignore") as f:
+        text2 = f.read()
+
+    print_info(f"File 1 size: {len(text1)} chars, {len(text1.splitlines())} lines")
+    print_info(f"File 2 size: {len(text2)} chars, {len(text2.splitlines())} lines")
+
+    # ── Similarity calculations ───────────────────────────────────
+    print_section_header("Analysis Results")
+
+    # Sequence match ratio (difflib)
+    sim_start = time.time()
+    similarity = calculate_similarity(text1, text2)
+    sim_time = time.time() - sim_start
+
+    # Longest Common Substring
+    lcs_start = time.time()
+    lcs_len = longest_common_substring(text1, text2)
+    lcs_time = time.time() - lcs_start
+
+    # Determine similarity level
+    if similarity >= 80:
+        level_color = Fore.RED + Style.BRIGHT
+        level_label = "HIGH SIMILARITY - Possible plagiarism"
+    elif similarity >= 50:
+        level_color = Fore.YELLOW
+        level_label = "MODERATE SIMILARITY"
+    else:
+        level_color = Fore.GREEN
+        level_label = "LOW SIMILARITY"
+
+    # Display results
+    width = 60
+    print(f"\n{Fore.CYAN + Style.BRIGHT}{'=' * width}{Style.RESET_ALL}")
+
+    rel1 = os.path.basename(file1)
+    rel2 = os.path.basename(file2)
+    print(f"  {Fore.WHITE}{rel1} <-> {rel2}{Style.RESET_ALL}")
+    print(f"\n  {level_color}Similarity Score : {similarity:.1f}%{Style.RESET_ALL}")
+    print(f"  {level_color}{level_label}{Style.RESET_ALL}")
+    print(f"\n  {Fore.WHITE}LCS Length       : {lcs_len} characters{Style.RESET_ALL}")
+    print(f"  {Fore.WHITE}Similarity Time  : {sim_time:.5f}s{Style.RESET_ALL}")
+    print(f"  {Fore.WHITE}LCS Time         : {lcs_time:.5f}s{Style.RESET_ALL}")
+
+    print(f"\n{Fore.CYAN + Style.BRIGHT}{'=' * width}{Style.RESET_ALL}")
 
 
 # ═══════════════════════════════════════════════════════════════════
