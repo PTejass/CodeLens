@@ -34,3 +34,16 @@ def search(text, pattern):
             i += shift_table.get(text[i], m)
 
     return indices
+
+if __name__ == "__main__":
+    # Test with mock text arrays
+    mock_texts = [
+        "this is a simple test string",
+        "another test string here",
+        "no match in this one",
+        "test test test"
+    ]
+    pattern = "test"
+    print(f"Testing Horspool algorithm with pattern: '{pattern}'")
+    for i, text in enumerate(mock_texts):
+        print(f"Text {i+1}: '{text}' -> Found at: {search(text, pattern)}")
