@@ -20,6 +20,7 @@ def read_line_direct(filepath, line_number, offsets):
         return None
         
     offset = offsets[line_number - 1]
-    with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+    with open(filepath, 'rb') as f:
         f.seek(offset)
-        return f.readline()
+        line = f.readline()
+        return line.decode('utf-8', errors='ignore')
