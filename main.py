@@ -24,7 +24,10 @@ colorama.init(autoreset=True)
 
 # Constants 
 VERSION = "1.0.0"
-SUPPORTED_EXTENSIONS = [".py", ".java", ".c", ".cpp", ".js"]
+SUPPORTED_EXTENSIONS = [
+    ".py", ".java", ".c", ".cpp", ".js", ".ts", ".go", ".rb", ".php", 
+    ".html", ".css", ".txt", ".md", ".json", ".yml", ".yaml", ".sh"
+]
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config", "banned_patterns.json")
 REPORT_OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports", "output")
 LAST_SCAN_CACHE = os.path.join(REPORT_OUTPUT_DIR, ".last_scan.json")
@@ -768,8 +771,8 @@ def build_parser():
     )
     scan_parser.add_argument(
         "--ext",
-        help="Comma-separated file extensions to include (default: .py,.java,.c,.cpp,.js)",
-        default=".py,.java,.c,.cpp,.js",
+        help=f"Comma-separated file extensions to include (default: {','.join(SUPPORTED_EXTENSIONS)})",
+        default=",".join(SUPPORTED_EXTENSIONS),
     )
     scan_parser.set_defaults(func=cmd_scan)
 
@@ -782,8 +785,8 @@ def build_parser():
     scan_repo_parser.add_argument("url", help="GitHub repository URL")
     scan_repo_parser.add_argument(
         "--ext",
-        help="Comma-separated file extensions to include (default: .py,.java,.c,.cpp,.js)",
-        default=".py,.java,.c,.cpp,.js",
+        help=f"Comma-separated file extensions to include (default: {','.join(SUPPORTED_EXTENSIONS)})",
+        default=",".join(SUPPORTED_EXTENSIONS),
     )
     scan_repo_parser.set_defaults(func=cmd_scan_repo)
 

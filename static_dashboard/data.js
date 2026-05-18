@@ -258,274 +258,70 @@ const shiftTables = {
 
 const scanReport = {
   "metadata": {
-    "directory": "C:\\Users\\hemab\\OneDrive\\Desktop\\FlashHack\\CodeLens\\sample_codebase",
-    "extensions": ".py, .java, .c, .cpp, .js",
-    "files_scanned": 3,
-    "total_violations": 37,
+    "directory": "C:\\Users\\hemab\\OneDrive\\Desktop\\FlashHack\\CodeLens\\.repos\\GeekVerse",
+    "extensions": ".py, .java, .c, .cpp, .js, .ts, .go, .rb, .php, .html, .css, .txt, .md, .json, .yml, .yaml, .sh",
+    "files_scanned": 9,
+    "total_violations": 6,
     "severity_counts": {
-      "critical": 5,
-      "warning": 2,
-      "style": 30
+      "critical": 0,
+      "warning": 0,
+      "style": 6
     },
-    "scan_time": 0.002012968063354492,
-    "horspool_time": 0.002012968063354492,
-    "naive_time": 0.004387378692626953
+    "scan_time": 0.0503993034362793,
+    "horspool_time": 0.0503993034362793,
+    "naive_time": 0.11701631546020508
   },
   "results": {
-    "auth.py": [
+    "index.html": [
       {
         "severity": "style",
         "pattern": "pass",
-        "line": 4,
-        "context": "def login(username, password):"
-      },
-      {
-        "severity": "style",
-        "pattern": "pass",
-        "line": 5,
-        "context": "    # CRITICAL: Hardcoded password pattern"
-      },
-      {
-        "severity": "critical",
-        "pattern": "password=",
-        "line": 6,
-        "context": "    password_check = \"password=SuperSecret123\""
-      },
-      {
-        "severity": "style",
-        "pattern": "pass",
-        "line": 6,
-        "context": "    password_check = \"password=SuperSecret123\""
-      },
-      {
-        "severity": "critical",
-        "pattern": "eval(",
-        "line": 9,
-        "context": "    user_data = eval(username)"
-      },
-      {
-        "severity": "warning",
-        "pattern": "TODO",
-        "line": 12,
-        "context": "    # TODO: Implement OAuth login instead"
-      },
-      {
-        "severity": "style",
-        "pattern": "print(",
-        "line": 15,
-        "context": "    print(\"User logged in successfully\")"
+        "line": 69,
+        "context": "        <p>Welcome to GeekVerse! We're passionate collectors and superhero enthusiasts dedicated to bringing you the"
       }
     ],
-    "bro.py": [
-      {
-        "severity": "critical",
-        "pattern": "password=",
-        "line": 3,
-        "context": "def check_password_strength(password=):"
-      },
-      {
-        "severity": "style",
-        "pattern": "pass",
-        "line": 3,
-        "context": "def check_password_strength(password=):"
-      },
-      {
-        "severity": "style",
-        "pattern": "pass",
-        "line": 5,
-        "context": "    length_check = len(password) >= 8"
-      },
-      {
-        "severity": "style",
-        "pattern": "pass",
-        "line": 6,
-        "context": "    uppercase_check = re.search(r'[A-Z]', password)"
-      },
-      {
-        "severity": "style",
-        "pattern": "pass",
-        "line": 7,
-        "context": "    lowercase_check = re.search(r'[a-z]', password)"
-      },
-      {
-        "severity": "style",
-        "pattern": "pass",
-        "line": 8,
-        "context": "    digit_check = re.search(r'\\d', password)"
-      },
-      {
-        "severity": "style",
-        "pattern": "pass",
-        "line": 9,
-        "context": "    special_check = re.search(r'[\\W_]', password)"
-      },
+    "login.html": [
       {
         "severity": "style",
         "pattern": "pass",
         "line": 25,
-        "context": "def check_passwords_from_file(filename):"
-      },
-      {
-        "severity": "style",
-        "pattern": "print(",
-        "line": 26,
-        "context": "    print(f\"Checking passwords in {filename}...\\n\")"
+        "context": "                    <label for=\"password\">Password:</label>"
       },
       {
         "severity": "style",
         "pattern": "pass",
         "line": 26,
-        "context": "    print(f\"Checking passwords in {filename}...\\n\")"
+        "context": "                    <input type=\"password\" id=\"password\" name=\"password\" required autocomplete=\"current-password\">"
       },
       {
         "severity": "style",
         "pattern": "pass",
-        "line": 29,
-        "context": "            passwords = file.readlines()"
-      },
-      {
-        "severity": "style",
-        "pattern": "pass",
-        "line": 31,
-        "context": "        for i, password in enumerate(passwords, start=1):"
-      },
-      {
-        "severity": "style",
-        "pattern": "pass",
-        "line": 32,
-        "context": "            pwd = password.strip()"
-      },
-      {
-        "severity": "style",
-        "pattern": "pass",
-        "line": 36,
-        "context": "            strength, score, checks = check_password_strength(pwd)"
-      },
-      {
-        "severity": "style",
-        "pattern": "print(",
-        "line": 37,
-        "context": "            print(f\"Password {i}: {pwd} -> Strength: {strength} ({score}/5 requirements met)\")"
-      },
-      {
-        "severity": "style",
-        "pattern": "print(",
-        "line": 40,
-        "context": "        print(f\"Error: The file '{filename}' was not found.\")"
-      },
-      {
-        "severity": "style",
-        "pattern": "pass",
-        "line": 44,
-        "context": "    user_pwd = input(\"Enter a password to test its strength (or type 'exit' to quit): \")"
-      },
-      {
-        "severity": "style",
-        "pattern": "pass",
-        "line": 46,
-        "context": "        strength, score, checks = check_password_strength(user_pwd)"
-      },
-      {
-        "severity": "style",
-        "pattern": "print(",
         "line": 47,
-        "context": "        print(f\"\\nResult: {strength} (Score: {score}/5)\")"
+        "context": "            const password = document.getElementById('password').value;"
       },
       {
         "severity": "style",
-        "pattern": "print(",
-        "line": 48,
-        "context": "        print(f\"Details:\")"
-      },
-      {
-        "severity": "style",
-        "pattern": "print(",
-        "line": 49,
-        "context": "        print(f\"- At least 8 characters: {'\u2713' if checks[0] else '\u2717'}\")"
-      },
-      {
-        "severity": "style",
-        "pattern": "print(",
+        "pattern": "pass",
         "line": 50,
-        "context": "        print(f\"- Uppercase letter (A-Z): {'\u2713' if checks[1] else '\u2717'}\")"
+        "context": "            if (username === 'admin' && password === 'geekverse') {"
       },
       {
         "severity": "style",
-        "pattern": "print(",
-        "line": 51,
-        "context": "        print(f\"- Lowercase letter (a-z): {'\u2713' if checks[2] else '\u2717'}\")"
-      },
-      {
-        "severity": "style",
-        "pattern": "print(",
-        "line": 52,
-        "context": "        print(f\"- Number (0-9): {'\u2713' if checks[3] else '\u2717'}\")"
-      },
-      {
-        "severity": "style",
-        "pattern": "print(",
-        "line": 53,
-        "context": "        print(f\"- Special character: {'\u2713' if checks[4] else '\u2717'}\")"
-      }
-    ],
-    "helper.js": [
-      {
-        "severity": "critical",
-        "pattern": "exec(",
-        "line": 4,
-        "context": "    // CRITICAL: Dangerous execution pattern (matching \"exec(\")"
-      },
-      {
-        "severity": "critical",
-        "pattern": "exec(",
-        "line": 5,
-        "context": "    let result = exec(cmd);"
-      },
-      {
-        "severity": "warning",
-        "pattern": "FIXME",
-        "line": 8,
-        "context": "    // FIXME: This is vulnerable to command injection!"
-      },
-      {
-        "severity": "style",
-        "pattern": "goto",
-        "line": 10,
-        "context": "    // STYLE: global variable declaration or goto style patterns"
-      },
-      {
-        "severity": "style",
-        "pattern": "global ",
-        "line": 10,
-        "context": "    // STYLE: global variable declaration or goto style patterns"
+        "pattern": "pass",
+        "line": 55,
+        "context": "                errorElement.textContent = 'Invalid username or password!';"
       }
     ]
   }
 };
 
 const fileComparisons = {
-  "auth.py|bro.py": {
-    "similarity": 1.51,
-    "lcs": 16,
-    "file1": "auth.py",
-    "file2": "bro.py",
-    "lines1": 17,
-    "lines2": 56
-  },
-  "auth.py|helper.js": {
-    "similarity": 14.22,
-    "lcs": 22,
-    "file1": "auth.py",
-    "file2": "helper.js",
-    "lines1": 17,
-    "lines2": 14
-  },
-  "bro.py|helper.js": {
-    "similarity": 1.23,
-    "lcs": 16,
-    "file1": "bro.py",
-    "file2": "helper.js",
-    "lines1": 56,
-    "lines2": 14
+  "index.html|login.html": {
+    "similarity": 11.65,
+    "lcs": 172,
+    "file1": "index.html",
+    "file2": "login.html",
+    "lines1": 103,
+    "lines2": 72
   }
 };

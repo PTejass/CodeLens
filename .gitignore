@@ -10,3 +10,7 @@ env/
 # Reports Output
 reports/output/*
 !reports/output/.gitkeep
+
+# Cloned Repositories
+.repos/
+
