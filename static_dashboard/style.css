@@ -516,6 +516,10 @@ body {
 .dropdown-select:focus, .dropdown-select:hover {
     border-color: var(--accent-blue);
 }
+.dropdown-select option {
+    background-color: var(--bg-panel);
+    color: var(--text-main);
+}
 .compare-icon {
     width: 40px;
     height: 40px;

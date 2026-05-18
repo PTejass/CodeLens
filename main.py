@@ -378,6 +378,68 @@ def cmd_scan(args):
     save_scan_results(results, metadata)
     print_success(f"Results cached for report/stats commands")
 
+    # Auto-build static data
+    print_section_header("Auto-building Static Dashboard")
+    try:
+        import build_static_data
+        build_static_data.main()
+    except Exception as e:
+        print_warning(f"Could not auto-build static data: {e}")
+
+
+def cmd_scan_repo(args):
+    """
+    Handle the `scan-repo <url>` command.
+    Clones the repository and delegates to `cmd_scan`.
+    """
+    import subprocess
+    import shutil
+    
+    url = args.url
+    print_section_header("Online Repository Scan")
+    print_info(f"Repository URL: {url}")
+    
+    if not url.startswith("https://github.com/"):
+        print_error("Only https://github.com/ URLs are supported currently.")
+        return
+        
+    repo_name = url.rstrip("/").split("/")[-1]
+    if repo_name.endswith(".git"):
+        repo_name = repo_name[:-4]
+        
+    repos_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".repos")
+    os.makedirs(repos_dir, exist_ok=True)
+    
+    target_dir = os.path.join(repos_dir, repo_name)
+    
+    if os.path.exists(target_dir):
+        print_info(f"Removing existing directory: {target_dir}")
+        try:
+            def onerror(func, path, exc_info):
+                import stat
+                if not os.access(path, os.W_OK):
+                    os.chmod(path, stat.S_IWUSR)
+                    func(path)
+            shutil.rmtree(target_dir, onerror=onerror)
+        except Exception as e:
+            print_error(f"Could not remove existing directory: {e}")
+            return
+            
+    print_info(f"Cloning {url} into {target_dir}...")
+    try:
+        subprocess.run(["git", "clone", "--depth", "1", url, target_dir], check=True)
+        print_success("Clone successful.")
+    except subprocess.CalledProcessError as e:
+        print_error(f"Git clone failed: {e}")
+        return
+    except FileNotFoundError:
+        print_error("'git' command not found. Please install Git.")
+        return
+        
+    # Delegate to scan
+    args.directory = target_dir
+    cmd_scan(args)
+
 
 def cmd_report(args):
     """
@@ -673,6 +735,7 @@ def build_parser():
         epilog=(
             f"Examples:\n"
             f"  python main.py scan ./src --ext .py,.js\n"
+            f"  python main.py scan-repo https://github.com/owner/repo\n"
             f"  python main.py report --format json\n"
             f"  python main.py stats\n"
             f"  python main.py jump auth.py 42\n"
@@ -709,6 +772,20 @@ def build_parser():
         default=".py,.java,.c,.cpp,.js",
     )
     scan_parser.set_defaults(func=cmd_scan)
+
+    #  scan-repo 
+    scan_repo_parser = subparsers.add_parser(
+        "scan-repo",
+        help="Scan a GitHub repository online",
+        description="Clones a GitHub repository and scans it for banned patterns.",
+    )
+    scan_repo_parser.add_argument("url", help="GitHub repository URL")
+    scan_repo_parser.add_argument(
+        "--ext",
+        help="Comma-separated file extensions to include (default: .py,.java,.c,.cpp,.js)",
+        default=".py,.java,.c,.cpp,.js",
+    )
+    scan_repo_parser.set_defaults(func=cmd_scan_repo)
 
     #  report 
     report_parser = subparsers.add_parser(
