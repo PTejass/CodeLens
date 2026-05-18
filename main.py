@@ -19,17 +19,17 @@ from datetime import datetime
 import colorama
 from colorama import Fore, Back, Style
 
-# ─── Initialize colorama for cross-platform ANSI color support ───
+# Initialize colorama for cross-platform ANSI color support 
 colorama.init(autoreset=True)
 
-# ─── Constants ────────────────────────────────────────────────────
+# Constants 
 VERSION = "1.0.0"
 SUPPORTED_EXTENSIONS = [".py", ".java", ".c", ".cpp", ".js"]
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config", "banned_patterns.json")
 REPORT_OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports", "output")
 LAST_SCAN_CACHE = os.path.join(REPORT_OUTPUT_DIR, ".last_scan.json")
 
-# ─── Severity color mapping ──────────────────────────────────────
+#  Severity color mapping 
 SEVERITY_COLORS = {
     "critical": Fore.RED + Style.BRIGHT,
     "warning":  Fore.YELLOW,
@@ -43,9 +43,7 @@ SEVERITY_LABELS = {
 }
 
 
-# ═══════════════════════════════════════════════════════════════════
 #  Banner & UI helpers
-# ═══════════════════════════════════════════════════════════════════
 
 def print_banner():
     """Print the CodeLens ASCII banner (Windows-safe ASCII art)."""
@@ -123,9 +121,9 @@ def format_violation(severity, pattern, line_number, context=""):
     return output
 
 
-# ═══════════════════════════════════════════════════════════════════
+
 #  Configuration loader
-# ═══════════════════════════════════════════════════════════════════
+
 
 def load_config(config_path=None):
     """
@@ -240,9 +238,7 @@ def load_last_scan():
         return None, None
 
 
-# ═══════════════════════════════════════════════════════════════════
 #  CLI command handlers  (Phase 3: fully wired)
-# ═══════════════════════════════════════════════════════════════════
 
 def cmd_scan(args):
     """
@@ -290,7 +286,7 @@ def cmd_scan(args):
         print_warning("No files to scan.")
         return
 
-    # ── Scan using both algorithms ────────────────────────────────
+    # Scan using both algorithms 
     print_section_header("Scanning with Horspool Algorithm")
 
     results = {}       # {filepath: [issues]}
@@ -346,7 +342,7 @@ def cmd_scan(args):
                     issue['context'],
                 ))
 
-    # ── Summary ───────────────────────────────────────────────────
+    # Summary 
     print_section_header("Scan Summary")
 
     severity_counts = {"critical": 0, "warning": 0, "style": 0}
@@ -514,7 +510,7 @@ def cmd_jump(args):
         print_error("Line number must be >= 1.")
         return
 
-    # ── Method 1: Sequential access ──────────────────────────────
+    #  Method 1: Sequential access 
     print_section_header("Sequential Access (line-by-line)")
     seq_start = time.time()
     seq_result = None
@@ -530,7 +526,7 @@ def cmd_jump(args):
     else:
         print_warning(f"Line {target_line} not found (file has fewer lines).")
 
-    # ── Method 2: Direct access (byte offset jump) ───────────────
+    #  Method 2: Direct access (byte offset jump) 
     print_section_header("Direct Access (byte offset jump)")
     idx_start = time.time()
     offsets = index_file_lines(filepath)
@@ -547,7 +543,7 @@ def cmd_jump(args):
     else:
         print_warning(f"Line {target_line} not found (file has {len(offsets)} lines).")
 
-    # ── Performance comparison ────────────────────────────────────
+    #  Performance comparison 
     print_section_header("Access Method Comparison")
     print_info(f"Sequential : {seq_time:.6f}s")
     print_info(f"Direct     : {idx_time + jump_time:.6f}s (index: {idx_time:.6f}s + jump: {jump_time:.6f}s)")
@@ -587,7 +583,7 @@ def cmd_compare(args):
     print_info(f"File 1 size: {len(text1)} chars, {len(text1.splitlines())} lines")
     print_info(f"File 2 size: {len(text2)} chars, {len(text2.splitlines())} lines")
 
-    # ── Similarity calculations ───────────────────────────────────
+    #  Similarity calculations 
     print_section_header("Analysis Results")
 
     # Sequence match ratio (difflib)
@@ -627,9 +623,9 @@ def cmd_compare(args):
     print(f"\n{Fore.CYAN + Style.BRIGHT}{'=' * width}{Style.RESET_ALL}")
 
 
-# ═══════════════════════════════════════════════════════════════════
+
 #  Argument parser setup
-# ═══════════════════════════════════════════════════════════════════
+
 
 def build_parser():
     """
@@ -665,7 +661,7 @@ def build_parser():
         description="Available CodeLens commands",
     )
 
-    # ── scan ──────────────────────────────────────────────────────
+    #  scan 
     scan_parser = subparsers.add_parser(
         "scan",
         help="Scan a directory for banned patterns and violations",
@@ -682,7 +678,7 @@ def build_parser():
     )
     scan_parser.set_defaults(func=cmd_scan)
 
-    # ── report ────────────────────────────────────────────────────
+    #  report 
     report_parser = subparsers.add_parser(
         "report",
         help="Generate a report from the last scan",
@@ -696,7 +692,7 @@ def build_parser():
     )
     report_parser.set_defaults(func=cmd_report)
 
-    # ── stats ─────────────────────────────────────────────────────
+    # stats 
     stats_parser = subparsers.add_parser(
         "stats",
         help="Show the analytics dashboard",
@@ -704,7 +700,7 @@ def build_parser():
     )
     stats_parser.set_defaults(func=cmd_stats)
 
-    # ── jump ──────────────────────────────────────────────────────
+    # jump 
     jump_parser = subparsers.add_parser(
         "jump",
         help="Jump directly to a line in a file (direct access demo)",
@@ -714,7 +710,7 @@ def build_parser():
     jump_parser.add_argument("line", type=int, help="Line number to jump to (1-indexed)")
     jump_parser.set_defaults(func=cmd_jump)
 
-    # ── compare ───────────────────────────────────────────────────
+    #  compare 
     compare_parser = subparsers.add_parser(
         "compare",
         help="Compare two files for similarity / plagiarism",
@@ -727,9 +723,6 @@ def build_parser():
     return parser
 
 
-# ═══════════════════════════════════════════════════════════════════
-#  Entry point
-# ═══════════════════════════════════════════════════════════════════
 
 def main():
     """Main entry point for the CodeLens CLI."""
