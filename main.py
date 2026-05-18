@@ -623,6 +623,37 @@ def cmd_compare(args):
     print(f"\n{Fore.CYAN + Style.BRIGHT}{'=' * width}{Style.RESET_ALL}")
 
 
+def cmd_shifttable(args):
+    """
+    Handle the `shifttable <pattern>` command.
+    Shows the bad-character shift table construction for a given pattern.
+    """
+    from scanner.horspool import build_shift_table
+    pattern = args.pattern
+    print_section_header("Bad-Character Shift Table Construction")
+    print_info(f"Pattern: '{pattern}'")
+    
+    table = build_shift_table(pattern)
+    width = 40
+    print(f"\n{Fore.CYAN + Style.BRIGHT}{'-' * width}{Style.RESET_ALL}")
+    print(f"  {Fore.WHITE + Style.BRIGHT}{'Character':<20} {'Shift':>10}{Style.RESET_ALL}")
+    print(f"{Fore.CYAN + Style.BRIGHT}{'-' * width}{Style.RESET_ALL}")
+    
+    # Iterate over characters as they appear in the pattern to show "construction"
+    length = len(pattern)
+    for i in range(length - 1):
+        char = pattern[i]
+        shift = length - 1 - i
+        print(f"  {Fore.WHITE}{repr(char):<20} {shift:>10}{Style.RESET_ALL}")
+        
+    m = len(pattern)
+    print(f"{Fore.CYAN + Style.BRIGHT}{'-' * width}{Style.RESET_ALL}")
+    print(f"  {Fore.WHITE}{'Final Table Summary:':<20}{Style.RESET_ALL}")
+    for char, shift in table.items():
+        print(f"  {Fore.GREEN}{repr(char):<20} {shift:>10}{Style.RESET_ALL}")
+    print(f"  {Fore.GREEN}{'*(other)':<20} {m:>10}{Style.RESET_ALL}")
+    print(f"{Fore.CYAN + Style.BRIGHT}{'-' * width}{Style.RESET_ALL}")
+
 
 #  Argument parser setup
 
@@ -645,7 +676,8 @@ def build_parser():
             f"  python main.py report --format json\n"
             f"  python main.py stats\n"
             f"  python main.py jump auth.py 42\n"
-            f"  python main.py compare file1.py file2.py"
+            f"  python main.py compare file1.py file2.py\n"
+            f"  python main.py shifttable \"pattern\""
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -719,6 +751,15 @@ def build_parser():
     compare_parser.add_argument("file1", help="Path to the first file")
     compare_parser.add_argument("file2", help="Path to the second file")
     compare_parser.set_defaults(func=cmd_compare)
+
+    #  shifttable 
+    shifttable_parser = subparsers.add_parser(
+        "shifttable",
+        help="Show the bad-character shift table for a pattern",
+        description="Constructs and displays the bad-character shift table used in the Horspool algorithm.",
+    )
+    shifttable_parser.add_argument("pattern", help="The pattern to build the shift table for")
+    shifttable_parser.set_defaults(func=cmd_shifttable)
 
     return parser
 
