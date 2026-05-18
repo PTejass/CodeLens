@@ -1,5 +1,30 @@
 {
-  "critical": ["password=", "eval(", "exec("],
-  "warning": ["TODO", "FIXME"],
-  "style": ["goto", "global"]
+  "critical": [
+    "password=",
+    "passwd=",
+    "secret_key=",
+    "api_key=",
+    "eval(",
+    "exec(",
+    "os.system(",
+    "subprocess.call(",
+    "__import__(",
+    "pickle.loads("
+  ],
+  "warning": [
+    "TODO",
+    "FIXME",
+    "HACK",
+    "XXX",
+    "BUG",
+    "DEPRECATED"
+  ],
+  "style": [
+    "goto",
+    "global ",
+    "from * import",
+    "import *",
+    "print(",
+    "pass"
+  ]
 }
