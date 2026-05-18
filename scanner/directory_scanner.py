@@ -1,6 +1,6 @@
 import os
 from filesystem.sequential_access import read_file_sequential
-from scanner.multipattern import search_multiple
+from scanner.multipattern import AhoCorasick
 
 def get_supported_files(directory, extensions):
     """
@@ -20,10 +20,16 @@ def scan_directory(directory, patterns, extensions=('.py', '.java', '.c', '.cpp'
     """
     violations = []
     
+    # Pre-compile the Aho-Corasick automaton
+    ac = AhoCorasick()
+    for p in patterns:
+        ac.add_pattern(p)
+    ac.build()
+    
     for filepath in get_supported_files(directory, extensions):
         try:
             for line_number, line in read_file_sequential(filepath):
-                results = search_multiple(line, patterns)
+                results = ac.search(line)
                 for pattern, indices in results.items():
                     if indices:
                         violations.append({
